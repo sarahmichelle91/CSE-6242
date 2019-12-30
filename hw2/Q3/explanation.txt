@@ -1,0 +1,1 @@
+Because the data values vary a lot(from 0 to 298101), and data for each class have quite large differences. Log and sqrt scales can minimize the diversity and we can have a better understanding of the relations between data. Also, we already see that the linear scales performs pretty bad. 

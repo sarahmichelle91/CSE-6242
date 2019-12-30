@@ -1,0 +1,36 @@
+﻿Part 2: top-3 most prominent answering individuals,
+answerer,questions_answered
+11142,1408
+1946,1223
+297,1038
+,
+,
+Part 3: top-3 individuals with the most questions asked,
+questioner,questions_asked
+6094,1051
+290,844
+1459,587
+,
+,
+Part 4: top-5 most common asker-answerer pairs,
+answerer,questioner
+1946,2672
+1946,7206
+11142,6094
+75,8628
+1946,8133
+,
+,
+Part 5: the number of interactions (questions asked/answered) over the months of September-2010 to December-2010,
+month,total_interactions
+September,1979
+October,2114
+November,1938
+December,1660
+,
+,
+Part 6: top-3 individuals with the maximum overall activity,
+user,total_activity
+11142,1795
+6094,1713
+290,1561

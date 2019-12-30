@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<script src="../lib/d3.v5.min.js"></script>
+<script src="../lib/d3-tip.min.js"></script>
+<style type="text/css">
+.select {
+    margin: 0 auto;
+}
+
+.label {
+  font-weight: bold;
+}
+
+.tile {
+  shape-rendering: crispEdges;
+}
+
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+</style>
+<body>
+<script>
+
+var parseTime = d3.timeParse("%Y");
+var formatTime = d3.timeFormat("%Y");
+var padding = 5;
+var years = ["2010","2011","2012","2013","2014","2015"];
+var yearNum = years.length;
+var margin = {top: 50, right: 50, bottom: 50, left: 50}
+  , width = 960 - margin.left - margin.right 
+  , height = 600 - margin.top - margin.bottom; 
+
+var formatNum = d3.format("o");
+// scale x and y axis
+var xScale = d3.scaleOrdinal().range([50, width-50]);
+var yScale = d3.scaleLinear().range([height-50, 50]);
+
+var svg = d3.select("body").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+
+// add title
+svg.append("text")
+    .attr("x", width/ 2 )
+    .attr("y", 0)
+    .style("font-weight","bold")
+    .style("text-anchor", "middle")
+    .style("font-size", "25px")
+    .text("Visualizing Earthquake Counts by State 2010-2015(M3+)");
+
+// add select box
+var selectbox = d3.select('body')   
+    .append('div')
+    .append('select')
+    .attr('class','select')
+
+
+d3.dsv(",", "earthquakes.csv").then(function(data){
+data.forEach(function(d){
+    d.States = d.States;
+    d["2010"] = +d["2010"];
+    d["2011"] = +d["2011"];
+    d["2012"] = +d["2012"];
+    d["2013"] = +d["2013"];
+    d["2014"] = +d["2014"];
+    d["2015"] = +d["2015"];
+    d.Category = d.Category;
+})
+
+selectbox.on("change", onchange);
+
+// add selectbox and initialization
+var options = selectbox.selectAll("option")
+    .data(d3.map(data, function(d) {return d.Category}).keys()).enter()
+    .append("option")
+    .attr("value", function(d) {return d})
+    .text(function(d) {return d})
+    .property("selected", function(d){ return d === "0 to 9"; });
+
+var thisData = data.filter(function(d) {return d.Category == "0 to 9"});
+var thisNum = thisData.length;
+
+// get information for selected data
+var colorType = ["#ffffcc", "#ffeda0", "#fed976", "#feb24c", "#fd8d3c", "#fc4e2a", "#e31a1c", "#bd0026", "#800026"];
+var color = d3.scaleQuantile().domain([-1, d3.max(thisData, function(d) {return Math.max(d["2010"], d["2011"], d["2012"], d["2013"],d["2014"],d["2015"]);})])
+  .range(colorType)
+
+
+var tip1 = d3.tip().attr('class', 'd3-tip').offset([-50,0])
+    .html(function(d) { return d.States + " 2010: " + d["2010"]})
+var tip2 = d3.tip().attr('class', 'd3-tip').offset([-110,0])
+    .html(function(d) { return d.States + " 2011: " + d["2011"]})
+var tip3 = d3.tip().attr('class', 'd3-tip').offset([-170,0])
+    .html(function(d) { return d.States + " 2012: " + d["2012"]})
+var tip4 = d3.tip().attr('class', 'd3-tip').offset([-230,0])
+    .html(function(d) { return d.States + " 2013: " + d["2013"]})
+var tip5 = d3.tip().attr('class', 'd3-tip').offset([-290,0])
+    .html(function(d) { return d.States + " 2014: " + d["2014"]})
+var tip6 = d3.tip().attr('class', 'd3-tip').offset([-350,0])
+    .html(function(d) { return d.States + " 2015: " + d["2015"]})
+
+// add tiles
+svg.selectAll("tile1").data(thisData).enter().append("rect").attr("class", "tile1")
+    .attr("x", function(d,i) { return 30+i*width/thisNum; })
+    .attr("y", function(d) { return 80; })
+    .attr("width", width/thisNum-10)
+    .attr("height",  50)
+    .style("fill", function(d) { return color(d["2010"]);})
+    .on('mouseover', tip1.show)
+    .on('mouseout', tip1.hide)
+    .call(tip1);
+
+svg.selectAll("tile2").data(thisData).enter().append("rect").attr("class", "tile2")
+    .attr("x", function(d,i) { return 30+i*width/thisNum; })
+    .attr("y", function(d) { return 140; })
+    .attr("width", width/thisNum-10)
+    .attr("height",  50)
+    .style("fill", function(d) { return color(d["2011"]);})
+    .on('mouseover', tip2.show)
+    .on('mouseout', tip2.hide)
+    .call(tip2);;
+
+svg.selectAll("tile3").data(thisData).enter().append("rect").attr("class", "tile3")
+    .attr("x", function(d,i) { return 30+i*width/thisNum; })
+    .attr("y", function(d) { return 200; })
+    .attr("width", width/thisNum-10)
+    .attr("height",  50)
+    .style("fill", function(d,i) { return color(d["2012"]);})
+    .on('mouseover', tip3.show)
+    .on('mouseout', tip3.hide)
+    .call(tip3);;
+
+svg.selectAll("tile4").data(thisData).enter().append("rect").attr("class", "tile4")
+    .attr("x", function(d,i) { return 30+i*width/thisNum; })
+    .attr("y", function(d) { return 260; })
+    .attr("width", width/thisNum-10)
+    .attr("height",  50)
+    .style("fill", function(d,i) { return color(d["2013"]);})
+    .on('mouseover', tip4.show)
+    .on('mouseout', tip4.hide)
+    .call(tip4);;
+
+svg.selectAll("tile5").data(thisData).enter().append("rect").attr("class", "tile5")
+    .attr("x", function(d,i) { return 30+i*width/thisNum; })
+    .attr("y", function(d) { return 320; })
+    .attr("width", width/thisNum-10)
+    .attr("height",  50)
+    .style("fill", function(d,i) { return color(d["2014"]);})
+    .on('mouseover', tip5.show)
+    .on('mouseout', tip5.hide)
+    .call(tip5);;
+
+svg.selectAll("tile6").data(thisData).enter().append("rect").attr("class", "tile6")
+    .attr("x", function(d,i) { return 30+i*width/thisNum; })
+    .attr("y", function(d) { return 380; })
+    .attr("width", width/thisNum-10)
+    .attr("height",  50)
+    .style("fill", function(d,i) { return color(d["2015"]);})
+    .on('mouseover', tip6.show)
+    .on('mouseout', tip6.hide)
+    .call(tip6);;
+
+
+// add axis and ylabel
+var xScale = d3.scaleBand().domain(thisData.map(function(d) {return d.States})).range([20, 880])
+var yScale = d3.scaleBand().domain(years).range([80, 435])
+var xAxis = d3.axisBottom(xScale).ticks(1);
+var yAxis = d3.axisLeft(yScale).ticks(1);
+svg.append("g").attr("class", "x axis").attr("transform", "translate(0, 435)").call(xAxis);
+svg.append("g").attr("class", "y axis").attr("transform", "translate( 20,0)").call(yAxis)
+        .selectAll("text").style("text-anchor", "end").attr("dx", "-.8em").attr("dy", "-.55em"); 
+
+// add legend
+var legend = svg.selectAll("legend").data(colorType)
+    .enter().append("g")
+    .each(function(d,i) {
+        d3.select(this).append("rect").attr("x", 80+40*i).attr("y", 470).attr("width",40).attr("height",30).style("fill",colorType[i]);
+        d3.select(this).append("text").attr("x", 80+40*i).attr("y", 520).text(formatNum(d3.max(thisData, function(d) {return Math.max(d["2010"], d["2011"], d["2012"], d["2013"],d["2014"],d["2015"]);})/9*i));
+    });
+
+svg.append("text").attr("x",30).attr("y",490).text("Count");
+svg.append("text").attr("x",-50).attr("y",540).text("Range of");
+
+function onchange() {
+    selectedValue = d3.select(this).property("value");
+    //console.log(selectedValue);
+    thisData = data.filter(function(d) {return d.Category == selectedValue});
+    thisNum = thisData.length;
+    //console.log(thisNum)
+    svg.selectAll("*").remove()
+
+    var color = d3.scaleQuantile().domain([-1, d3.max(thisData, function(d) {return Math.max(d["2010"], d["2011"], d["2012"], d["2013"],d["2014"],d["2015"]);})])
+  .range(colorType)
+
+// add tiles
+svg.selectAll("tile1").data(thisData).enter().append("rect").attr("class", "tile1")
+    .attr("x", function(d,i) { return 30+i*width/thisNum; })
+    .attr("y", function(d) { return 80; })
+    .attr("width", width/thisNum-10)
+    .attr("height",  50)
+    .style("fill", function(d) { return color(d["2010"]);})
+    .on('mouseover', tip1.show)
+    .on('mouseout', tip1.hide)
+    .call(tip1);
+
+svg.selectAll("tile2").data(thisData).enter().append("rect").attr("class", "tile2")
+    .attr("x", function(d,i) { return 30+i*width/thisNum; })
+    .attr("y", function(d) { return 140; })
+    .attr("width", width/thisNum-10)
+    .attr("height",  50)
+    .style("fill", function(d) { return color(d["2011"]);})
+    .on('mouseover', tip2.show)
+    .on('mouseout', tip2.hide)
+    .call(tip2);;
+
+svg.selectAll("tile3").data(thisData).enter().append("rect").attr("class", "tile3")
+    .attr("x", function(d,i) { return 30+i*width/thisNum; })
+    .attr("y", function(d) { return 200; })
+    .attr("width", width/thisNum-10)
+    .attr("height",  50)
+    .style("fill", function(d,i) { return color(d["2012"]);})
+    .on('mouseover', tip3.show)
+    .on('mouseout', tip3.hide)
+    .call(tip3);;
+
+svg.selectAll("tile4").data(thisData).enter().append("rect").attr("class", "tile4")
+    .attr("x", function(d,i) { return 30+i*width/thisNum; })
+    .attr("y", function(d) { return 260; })
+    .attr("width", width/thisNum-10)
+    .attr("height",  50)
+    .style("fill", function(d,i) { return color(d["2013"]);})
+    .on('mouseover', tip4.show)
+    .on('mouseout', tip4.hide)
+    .call(tip4);;
+
+svg.selectAll("tile5").data(thisData).enter().append("rect").attr("class", "tile5")
+    .attr("x", function(d,i) { return 30+i*width/thisNum; })
+    .attr("y", function(d) { return 320; })
+    .attr("width", width/thisNum-10)
+    .attr("height",  50)
+    .style("fill", function(d,i) { return color(d["2014"]);})
+    .on('mouseover', tip5.show)
+    .on('mouseout', tip5.hide)
+    .call(tip5);;
+
+svg.selectAll("tile6").data(thisData).enter().append("rect").attr("class", "tile6")
+    .attr("x", function(d,i) { return 30+i*width/thisNum; })
+    .attr("y", function(d) { return 380; })
+    .attr("width", width/thisNum-10)
+    .attr("height",  50)
+    .style("fill", function(d,i) { return color(d["2015"]);})
+    .on('mouseover', tip6.show)
+    .on('mouseout', tip6.hide)
+    .call(tip6);;
+
+// add legend
+var legend = svg.selectAll("legend").data(colorType)
+    .enter().append("g")
+    .each(function(d,i) {
+        d3.select(this).append("rect").attr("x", 80+40*i).attr("y", 470).attr("width",40).attr("height",30).style("fill",colorType[i]);
+        d3.select(this).append("text").attr("x", 80+40*i).attr("y", 520).text(formatNum(d3.max(thisData, function(d) {return Math.max(d["2010"], d["2011"], d["2012"], d["2013"],d["2014"],d["2015"]);})/9*i));
+    });
+
+svg.append("text").attr("x",30).attr("y",490).text("Count");
+svg.append("text").attr("x",-50).attr("y",540).text("Range of");
+
+// add axis and ylabel
+var xScale = d3.scaleBand().domain(thisData.map(function(d) {return d.States})).range([20, 880])
+var yScale = d3.scaleBand().domain(years).range([80, 435])
+var xAxis = d3.axisBottom(xScale).ticks(1);
+var yAxis = d3.axisLeft(yScale).ticks(1);
+svg.append("g").attr("class", "x axis").attr("transform", "translate(0, 435)").call(xAxis);
+svg.append("g").attr("class", "y axis").attr("transform", "translate( 20,0)").call(yAxis)
+        .selectAll("text").style("text-anchor", "end").attr("dx", "-.8em").attr("dy", "-.55em"); 
+
+// add title
+svg.append("text")
+    .attr("x", width/ 2 )
+    .attr("y", 0)
+    .style("font-weight","bold")
+    .style("text-anchor", "middle")
+    .style("font-size", "25px")
+    .text("Visualizing Earthquake Counts by State 2010-2015(M3+)");
+}
+})
+</script>
+</body>
+</html>

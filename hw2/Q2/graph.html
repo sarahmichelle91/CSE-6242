@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<script src="../lib/d3.v5.min.js"></script>
+<style>
+
+path.link {
+  fill: none;
+  stroke: #666;
+  stroke-width: 1.5px;
+}
+
+circle {
+  fill: #ccc;
+  stroke: #fff;
+  stroke: black;
+  stroke-width: 1.5px;
+}
+
+text {
+  fill: #000;
+  font: 10px sans-serif;
+  pointer-events: none;
+}
+
+</style>
+<body>
+<script>
+
+// get the data
+links =  [
+  {
+    "source": "C",
+    "target": "Java",
+    "value": 1
+  },
+  {
+    "source": "JavaScript",
+    "target": "Java",
+    "value": 0
+  },
+  {
+    "source": "JavaScript",
+    "target": "Ruby",
+    "value": 1
+  },
+  {
+    "source": "Haskel",
+    "target": "Java",
+    "value": 0
+  },
+  {
+    "source": "Haskel",
+    "target": "JSON",
+    "value": 1
+  },
+  {
+    "source": "JavaScript",
+    "target": "Python",
+    "value": 0
+  },
+  {
+    "source": "Haskel",
+    "target": "Python",
+    "value": 1
+  },
+  {
+    "source": "Objact C",
+    "target": "Java",
+    "value": 0
+  },
+  {
+    "source": "Sharp",
+    "target": "Java",
+    "value": 1
+  },
+  {
+    "source": "Clojure",
+    "target": "C",
+    "value": 0
+  },
+  {
+    "source": "AWK",
+    "target": "C",
+    "value": 1
+  },
+  {
+    "source": "LISP",
+    "target": "JSON",
+    "value": 0
+  },
+  {
+    "source": "Cobra",
+    "target": "Python",
+    "value": 1
+  },
+  {
+    "source": "JSON",
+    "target": "Python",
+    "value": 0
+  },
+  {
+    "source": "Pascal",
+    "target": "Haskel",
+    "value": 1
+  },
+  {
+    "source": "PHP",
+    "target": "C",
+    "value": 0
+  },
+  {
+    "source": "Windows-Powershell",
+    "target": "Sharp",
+    "value": 1
+  },
+  {
+    "source": "Windows-Powershell",
+    "target": "Vala",
+    "value": 0
+  },
+  {
+    "source": "VBScript",
+    "target": "Objact C",
+    "value": 1
+  },
+  {
+    "source": "VisualBasic.NET",
+    "target": "Sharp",
+    "value": 0
+  },
+  {
+    "source": "AppleScript",
+    "target": "LISP",
+    "value": 1
+  },
+  {
+    "source": "C-Sharp",
+    "target": "Java",
+    "value": 0
+  },
+  {
+    "source": "Scala",
+    "target": "Java",
+    "value": 1
+  },
+  {
+    "source": "C++",
+    "target": "C",
+    "value": 0
+  },
+  {
+    "source": "Groovy",
+    "target": "Ruby",
+    "value": 1
+  },
+  {
+    "source": "Logo",
+    "target": "LISP",
+    "value": 0
+  },
+  {
+    "source": "Factor",
+    "target": "Haskel",
+    "value": 1
+  },
+  {
+    "source": "APL",
+    "target": "J",
+    "value": 0
+  },
+  {
+    "source": "J",
+    "target": "Java",
+    "value": 1
+  }
+];
+
+var nodes = {};
+
+// Compute the distinct nodes from the links.
+links.forEach(function(link) {
+    link.source = nodes[link.source] ||
+        (nodes[link.source] = {name: link.source});
+    link.target = nodes[link.target] ||
+        (nodes[link.target] = {name: link.target});
+});
+
+
+var width = 1200,
+    height = 700;
+
+var force = d3.forceSimulation()
+    .nodes(d3.values(nodes))
+    .force("link", d3.forceLink(links).distance(100))
+    .force('center', d3.forceCenter(width / 2, height / 2))
+    .force("x", d3.forceX())
+    .force("y", d3.forceY())
+    .force("charge", d3.forceManyBody().strength(-250))
+    .alphaTarget(1)
+    .on("tick", tick);
+
+var svg = d3.select("body").append("svg")
+    .attr("width", width)
+    .attr("height", height);
+
+
+// add the links and the arrows
+
+var path = svg.append("g")
+.selectAll("path")
+.data(links)
+.enter()
+.append("path")
+.attr("class", function(d) { return "link " + d.type; })
+.attr("style", function(d) { 
+  if (d.value == 0) return ("stroke-width:" + 2 + "px;")
+  else return "stroke-width:" + 5 + "px;";})
+.style("stroke", function(d) {
+  if (d.value == 0) return "black";
+  else return "green";
+})
+.attr('stroke-dasharray', function(d) {
+  if(d.value == 0) return '5, 5';
+  else return null;
+});
+
+// define the nodes
+var node = svg.selectAll(".node")
+    .data(force.nodes())
+  .enter().append("g")
+    .attr("class", "node")
+    .call(d3.drag()
+      .on("start", dragstarted)
+      .on("drag", dragged)
+      .on("end", dragended)
+      );
+
+node.each(function(d) {
+    d.degree = 0;
+  });
+
+// Calculate degree
+links.forEach(function(d){
+    d.source.degree += 1;
+    d.target.degree += 1;
+  });
+  
+// Accessor functions to get min & max
+var minDegree = d3.min(
+  d3.values(nodes), function(d) {
+    return d.degree; })
+
+var maxDegree = d3.max(
+  d3.values(nodes), function(d) { 
+    return d.degree; })
+
+// Create node scale based on degree
+var nodescale = d3.scaleSqrt()
+  .domain( [minDegree, maxDegree] )
+  .range( [5, 15] ); 
+
+
+var color = d3.scaleLinear().domain([1,10])
+  .range(["white", "blue"])
+// add the nodes
+node.append("circle")
+    .style("fill", function(d) {return color(d.degree);})
+    .attr("r", function(d) { return nodescale(d.degree);})
+    .on("dblclick", function(d) {
+      if (d.fixed == true) {
+        d.fixed = false;
+        d3.select(this).style("fill", function(d) {return color(d.degree);})
+          .attr("r", function(d) { return nodescale(d.degree);});
+      }
+      else {
+        d.fixed = true;
+        d3.select(this).style("fill", "red")
+          .attr("r", function(d) { return nodescale(d.degree);});
+      }
+    });
+
+
+// add node labels
+node.append("svg:text").text(function(d) { return d.name})
+
+// add the curvy lines
+function tick() {
+    path.attr("d", function(d) {
+        var dx = d.target.x - d.source.x,
+            dy = d.target.y - d.source.y,
+            dr = Math.sqrt(dx * dx + dy * dy);
+        return "M" +
+            d.source.x + "," +
+            d.source.y + "A" +
+            dr + "," + dr + " 0 0,1 " +
+            d.target.x + "," +
+            d.target.y;
+    });
+
+    node
+        .attr("transform", function(d) {
+        return "translate(" + d.x + "," + d.y + ")"; })
+};
+
+
+function dragstarted(d) {
+      if (!d3.event.active) force.alphaTarget(0.3).restart();
+      d.fx = d.x;
+      d.fy = d.y;
+    };
+
+function dragged(d) {
+  d.fx = d3.event.x;
+  d.fy = d3.event.y;
+};
+
+function dragended(d) {
+  if (!d3.event.active) force.alphaTarget(0);
+  if (d.fixed == true){
+     d.fx = d.x;
+     d.fy = d.y;
+  }
+  else{
+    d.fx = null;
+    d.fy = null;
+  }
+
+};
+
+</script>
+</body>
+</html>

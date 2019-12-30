@@ -1,0 +1,24 @@
+1. Ease to develop for developers
+Python: pretty easy and there are a lot of examples online
+Tableau: not so easy when compared to the other two
+D3: similar to Python
+
+2. Ease to maintain the visualization for developers
+Python: not so easy when compared to Tableau because we have to open another window to show
+Tableau: pretty easy and also useful to visualize
+D3: similar to Python, need another window
+
+3. Usability of visualization developed for end users
+Python: not so easy, still need to write codes to play with figures
+Tableau: should be the most user-friendly for end users, because they can easily do actions on the plot
+D3: between Python and Tableau, although still needs coding, we can still get the information of plots using browser.
+
+4. Scalability of visualization to “large” datasets
+Python: sometimes can not plot a figure with pretty high resolutions
+Tableau: works well, but the computer should be powerful enough to use some functions such as preview
+D3: works well, but might need enough internet speed if the data is from online
+
+5. System requirements to run the visualization
+Python: pretty low requirement
+Tableau: might need a powerful computer
+D3: just use browser, pretty low requirement

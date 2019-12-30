@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<script src="../lib/d3.v5.min.js"></script>
+<style type="text/css">
+  .line {
+      fill: none;
+      stroke: #ffab00;
+      stroke-width: 3;
+  }
+    
+  .overlay {
+    fill: none;
+    pointer-events: all;
+  }
+  
+  .dot {
+      fill: #ffab00;
+      stroke: #fff;
+  }
+    
+    .focus circle {
+    fill: none;
+    stroke: steelblue;
+  }
+
+</style>
+<body>
+<script>
+
+var dataset = []
+var parseTime = d3.timeParse("%Y");
+var formatTime = d3.timeFormat("%Y");
+var colors = ['#FFC300', '#FF5733', '#C70039', '#900C3F']
+var types = ["8.0+", "7_7.9", "6_6.9", "5_5.9"]
+
+d3.dsv(",", "earthquakes.csv").then(function(data){
+
+data.forEach(function(d) {
+    d["year"] = parseTime(d["year"]);
+    d["8.0+"] = + d["8.0+"];
+    d["7_7.9"] = + d["7_7.9"];
+    d["6_6.9"] = + d["6_6.9"];
+    d["5_5.9"] = + d["5_5.9"];
+    d["Estimated Deaths"] = + d["Estimated Deaths"];
+  })
+
+//data.forEach(function(d){console.log(d["year"])});
+//console.log(data);
+
+var margin = {top: 50, right: 50, bottom: 50, left: 50}
+  , width = window.innerWidth - margin.left - margin.right 
+  , height = window.innerHeight - margin.top - margin.bottom; 
+
+// scale x and y axis
+var xScale = d3.scaleTime()
+    .domain([d3.min(data, function(d) {return d["year"]; }),d3.max(data, function(d) {return d["year"]; })])
+    .range([50, width-50]); 
+
+var yScale = d3.scaleLinear()
+    .domain([d3.min(data, function(d) {return Math.min(d["8.0+"], d["7_7.9"], d["6_6.9"], d["5_5.9"]);})
+    , d3.max(data, function(d) {return Math.max(d["8.0+"], d["7_7.9"], d["6_6.9"], d["5_5.9"]);})])  
+    .range([height-50, 50]); 
+
+var rScale = d3.scaleLinear()
+    .domain([d3.min(data, function(d) {return d["Estimated Deaths"];}), d3.max(data, function(d) {return d["Estimated Deaths"];})])
+    .range([5,15])
+//console.log(d3.min(data, function(d) {return d["8.0+"];}), d3.max(data, function(d) {return d["8.0+"];}));
+
+// define axis
+var xAxis = d3.axisBottom(xScale).tickFormat(formatTime)
+    .tickValues(d3.timeYear.every(2).range(d3.min(data, function(d) { return d["year"]; }),
+                d3.max(data, function(d) { return d["year"]; })));
+
+var yAxis = d3.axisLeft(yScale).ticks(10);
+
+//define lines
+var line1 = d3.line()
+    .x(function(d) { return xScale(d["year"]); }) 
+    .y(function(d) { return yScale(d["8.0+"]); })  
+    .curve(d3.curveMonotoneX) 
+
+var line2 = d3.line()
+    .x(function(d) { return xScale(d["year"]); }) 
+    .y(function(d) { return yScale(d["7_7.9"]); })  
+    .curve(d3.curveMonotoneX) 
+
+var line3 = d3.line()
+    .x(function(d) { return xScale(d["year"]); }) 
+    .y(function(d) { return yScale(d["6_6.9"]); })  
+    .curve(d3.curveMonotoneX) 
+
+var line4 = d3.line()
+    .x(function(d) { return xScale(d["year"]); }) 
+    .y(function(d) { return yScale(d["5_5.9"]); })  
+    .curve(d3.curveMonotoneX) 
+
+// figure 1
+var svg1 = d3.select("body").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+// add title
+svg1.append("text")
+    .attr("x", width/ 2 )
+    .attr("y", 0)
+    .style("font-weight","bold")
+    .style("text-anchor", "middle")
+    .style("font-size", "25px")
+    .text("Worldwide Earthquake stats 2000-2015");
+
+// add axis
+svg1.append("g").attr("class", "x axis").attr("transform", "translate(0," + (height-50) + ")").call(xAxis);
+svg1.append("g").attr("class", "y axis").attr("transform", "translate(" + 50 + ",0)").call(yAxis); 
+
+// add axis labels
+svg1.append("text").attr("x", -height/2).attr("y", 0).attr("transform", "rotate(-90)")
+    .style("font-size", "25px").style("font-weight","bold")
+    .style("text-anchor", "middle").text("Num of Earthquakes");
+
+svg1.append("text").attr("x", width/2).attr("y", height)
+    .style("font-size", "25px").style("font-weight","bold")
+    .style("text-anchor", "middle").text("Year");
+
+// add line
+svg1.append("path").datum(data).attr("class", "line").style("stroke", '#900C3F').attr("d", line1); 
+svg1.append("path").datum(data).attr("class", "line").style("stroke", '#C70039').attr("d", line2); 
+svg1.append("path").datum(data).attr("class", "line").style("stroke", '#FF5733').attr("d", line3); 
+svg1.append("path").datum(data).attr("class", "line").style("stroke", '#FFC300').attr("d", line4); 
+
+// add legend
+for (var i = 0; i < 4; i++) {
+    svg1.append("rect").attr("x",width-50).attr("y",30*i).attr("width", 20).attr("height", 20).style("fill", colors[i])
+    svg1.append("text").attr("x", width-20).attr("y", 10+30*i).text(types[3-i])
+        .style("font-size", "15px").style("font-weight","bold").attr("alignment-baseline","middle")
+}
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////
+// figure 2
+var svg2 = d3.select("body").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+// add title
+svg2.append("text")
+    .attr("x", width/ 2 )
+    .attr("y", 0)
+    .style("font-weight","bold")
+    .style("text-anchor", "middle")
+    .style("font-size", "25px")
+    .text("Worldwide Earthquake stats 2000-2015 with symbols");
+
+// add axis
+svg2.append("g").attr("class", "x axis").attr("transform", "translate(0," + (height-50) + ")").call(xAxis);
+svg2.append("g").attr("class", "y axis").attr("transform", "translate(" + 50 + ",0)").call(yAxis); 
+
+// add axis labels
+svg2.append("text").attr("x", -height/2).attr("y", 0).attr("transform", "rotate(-90)")
+    .style("font-size", "25px").style("font-weight","bold")
+    .style("text-anchor", "middle").text("Num of Earthquakes");
+
+svg2.append("text").attr("x", width/2).attr("y", height)
+    .style("font-size", "25px").style("font-weight","bold")
+    .style("text-anchor", "middle").text("Year");
+
+// add line
+svg2.append("path").datum(data).attr("class", "line").style("stroke", '#900C3F').attr("d", line1); 
+svg2.append("path").datum(data).attr("class", "line").style("stroke", '#C70039').attr("d", line2); 
+svg2.append("path").datum(data).attr("class", "line").style("stroke", '#FF5733').attr("d", line3); 
+svg2.append("path").datum(data).attr("class", "line").style("stroke", '#FFC300').attr("d", line4); 
+
+// add legend
+for (var i = 0; i < 4; i++) {
+    svg2.append("rect").attr("x",width-50).attr("y",30*i).attr("width", 20).attr("height", 20).style("fill", colors[i])
+    svg2.append("text").attr("x", width-20).attr("y", 10+30*i).text(types[3-i])
+        .style("font-size", "15px").style("font-weight","bold").attr("alignment-baseline","middle")
+    svg2.selectAll("circle"+i).data(data).enter().append("circle")  
+        .attr("cx", function(d) {return xScale(d["year"])})
+        .attr("cy", function(d) {return yScale(d[types[3-i]])})
+        .attr("r", function(d) {return rScale(d["Estimated Deaths"])})
+        .attr("fill", colors[i]);
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////
+// figure 3
+// scale x and y axis using sqrt
+var ysqScale = d3.scaleSqrt()
+    .domain([d3.min(data, function(d) {return Math.min(d["8.0+"], d["7_7.9"], d["6_6.9"], d["5_5.9"]);})
+    , d3.max(data, function(d) {return Math.max(d["8.0+"], d["7_7.9"], d["6_6.9"], d["5_5.9"]);})])  
+    .range([height-50, 50]); 
+
+var ysqAxis = d3.axisLeft(ysqScale).ticks(10);
+
+//define lines
+var line1sq = d3.line()
+    .x(function(d) { return xScale(d["year"]); }) 
+    .y(function(d) { return ysqScale(d["8.0+"]); })  
+    .curve(d3.curveMonotoneX) 
+
+var line2sq = d3.line()
+    .x(function(d) { return xScale(d["year"]); }) 
+    .y(function(d) { return ysqScale(d["7_7.9"]); })  
+    .curve(d3.curveMonotoneX) 
+
+var line3sq = d3.line()
+    .x(function(d) { return xScale(d["year"]); }) 
+    .y(function(d) { return ysqScale(d["6_6.9"]); })  
+    .curve(d3.curveMonotoneX) 
+
+var line4sq = d3.line()
+    .x(function(d) { return xScale(d["year"]); }) 
+    .y(function(d) { return ysqScale(d["5_5.9"]); })  
+    .curve(d3.curveMonotoneX) 
+
+var svg3 = d3.select("body").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+// add title
+svg3.append("text")
+    .attr("x", width/ 2 )
+    .attr("y", 0)
+    .style("font-weight","bold")
+    .style("text-anchor", "middle")
+    .style("font-size", "25px")
+    .text("Worldwide Earthquake stats 2000-2015 square root scale");
+
+// add axis
+svg3.append("g").attr("class", "x axis").attr("transform", "translate(0," + (height-50) + ")").call(xAxis);
+svg3.append("g").attr("class", "y axis").attr("transform", "translate(" + 50 + ",0)").call(ysqAxis); 
+
+// add axis labels
+svg3.append("text").attr("x", -height/2).attr("y", 0).attr("transform", "rotate(-90)")
+    .style("font-size", "25px").style("font-weight","bold")
+    .style("text-anchor", "middle").text("Num of Earthquakes");
+
+svg3.append("text").attr("x", width/2).attr("y", height)
+    .style("font-size", "25px").style("font-weight","bold")
+    .style("text-anchor", "middle").text("Year");
+
+// add line
+svg3.append("path").datum(data).attr("class", "line").style("stroke", '#900C3F').attr("d", line1sq); 
+svg3.append("path").datum(data).attr("class", "line").style("stroke", '#C70039').attr("d", line2sq); 
+svg3.append("path").datum(data).attr("class", "line").style("stroke", '#FF5733').attr("d", line3sq); 
+svg3.append("path").datum(data).attr("class", "line").style("stroke", '#FFC300').attr("d", line4sq); 
+
+// add legend
+for (var i = 0; i < 4; i++) {
+    svg3.append("rect").attr("x",width-50).attr("y",30*i).attr("width", 20).attr("height", 20).style("fill", colors[i])
+    svg3.append("text").attr("x", width-20).attr("y", 10+30*i).text(types[3-i])
+        .style("font-size", "15px").style("font-weight","bold").attr("alignment-baseline","middle")
+    svg3.selectAll("circle"+i).data(data).enter().append("circle")  
+        .attr("cx", function(d) {return xScale(d["year"])})
+        .attr("cy", function(d) {return ysqScale(d[types[3-i]])})
+        .attr("r", function(d) {return rScale(d["Estimated Deaths"])})
+        .attr("fill", colors[i]);
+}
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////
+// figure 4
+// scale x and y axis using log
+var ylogScale = d3.scaleLog()
+    .domain([d3.min(data, function(d) {return 1+Math.min(d["8.0+"], d["7_7.9"], d["6_6.9"], d["5_5.9"]);})
+    , d3.max(data, function(d) {return 1+Math.max(d["8.0+"], d["7_7.9"], d["6_6.9"], d["5_5.9"]);})])  
+    .range([height-50, 50]); 
+
+var ylogAxis = d3.axisLeft(ylogScale).ticks(10);
+
+//define lines
+var line1log = d3.line()
+    .x(function(d) { return xScale(d["year"]); }) 
+    .y(function(d) { return ylogScale(1+d["8.0+"]); })  
+    .curve(d3.curveMonotoneX) 
+
+var line2log = d3.line()
+    .x(function(d) { return xScale(d["year"]); }) 
+    .y(function(d) { return ylogScale(1+d["7_7.9"]); })  
+    .curve(d3.curveMonotoneX) 
+
+var line3log = d3.line()
+    .x(function(d) { return xScale(d["year"]); }) 
+    .y(function(d) { return ylogScale(1+d["6_6.9"]); })  
+    .curve(d3.curveMonotoneX) 
+
+var line4log = d3.line()
+    .x(function(d) { return xScale(d["year"]); }) 
+    .y(function(d) { return ylogScale(1+d["5_5.9"]); })  
+    .curve(d3.curveMonotoneX) 
+
+var svg4 = d3.select("body").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+// add title
+svg4.append("text")
+    .attr("x", width/ 2 )
+    .attr("y", 0)
+    .style("font-weight","bold")
+    .style("text-anchor", "middle")
+    .style("font-size", "25px")
+    .text("Worldwide Earthquake stats 2000-2015 log scale");
+
+// add axis
+svg4.append("g").attr("class", "x axis").attr("transform", "translate(0," + (height-50) + ")").call(xAxis);
+svg4.append("g").attr("class", "y axis").attr("transform", "translate(" + 50 + ",0)").call(ylogAxis); 
+
+// add axis labels
+svg4.append("text").attr("x", -height/2).attr("y", 0).attr("transform", "rotate(-90)")
+    .style("font-size", "25px").style("font-weight","bold")
+    .style("text-anchor", "middle").text("Num of Earthquakes");
+
+svg4.append("text").attr("x", width/2).attr("y", height)
+    .style("font-size", "25px").style("font-weight","bold")
+    .style("text-anchor", "middle").text("Year");
+
+// add line
+svg4.append("path").datum(data).attr("class", "line").style("stroke", '#900C3F').attr("d", line1log); 
+svg4.append("path").datum(data).attr("class", "line").style("stroke", '#C70039').attr("d", line2log); 
+svg4.append("path").datum(data).attr("class", "line").style("stroke", '#FF5733').attr("d", line3log); 
+svg4.append("path").datum(data).attr("class", "line").style("stroke", '#FFC300').attr("d", line4log); 
+
+// add legend
+for (var i = 0; i < 4; i++) {
+    svg4.append("rect").attr("x",width-50).attr("y",30*i).attr("width", 20).attr("height", 20).style("fill", colors[i])
+    svg4.append("text").attr("x", width-20).attr("y", 10+30*i).text(types[3-i])
+        .style("font-size", "15px").style("font-weight","bold").attr("alignment-baseline","middle")
+    svg4.selectAll("circle"+i).data(data).enter().append("circle")  
+        .attr("cx", function(d) {return xScale(d["year"])})
+        .attr("cy", function(d) {return ylogScale(1+d[types[3-i]])})
+        .attr("r", function(d) {return rScale(d["Estimated Deaths"])})
+        .attr("fill", colors[i]);
+}
+})
+</script>
+</body>
+</html>

@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<script src="../lib/d3.v5.min.js"></script>
+<script src="../lib/topojson.v2.min.js"></script>
+<script src="../lib/d3-tip.min.js"></script>
+
+<body>
+<script>
+
+// define parameters
+var margin = {top: 50, right: 50, bottom: 50, left: 50};
+var width = 960 - margin.left - margin.right;
+var height = 600 - margin.top - margin.bottom; 
+var projection = d3.geoAlbersUsa();
+var path = d3.geoPath().projection(projection);
+var tip = d3.tip().attr('class', 'd3-tip').offset([10,10])
+      	    .html(function(d) { return "State: "+d.properties.name+"<br/> Region: "+d.properties.region+"<br/> Earthquakes: "+d.properties.value
+      	    });
+var svg = d3.select("body").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
+    .call(tip);
+
+// read data
+var dataset = []
+var promise = [d3.json("states-10m.json"), d3.dsv(",","state-earthquakes.csv")]
+var colorType = ["#ffffcc", "#ffeda0", "#fed976", "#feb24c", "#fd8d3c", "#fc4e2a", "#e31a1c", "#bd0026", "#800026"];
+var color = d3.scaleQuantile().range(colorType)
+
+Promise.all([d3.json("states-10m.json"),d3.dsv(",","state-earthquakes.csv").then(function(d) {
+    for (var i = 0; i < d.length; i++) {
+        dataset.push({state: d[i].States, region:d[i].Region, value: +d[i]["Total Earthquakes"]})
+    }
+    color.domain([Math.log(1+d3.min(dataset, function(d) {return d.value})),Math.log(1+d3.max(dataset, function(d) {return d.value}))])})])
+    .then(function(files){
+    var tip = d3.tip().attr('class', 'd3-tip').html(function(d) {return "State: "+d.properties.name+"<br/> Region: " 
+        +d.properties.region+"<br/> Earthquakes: "+d.properties.value})
+    svg.append("g").attr("class", "states").selectAll("path")
+        .data(topojson.feature(files[0], files[0].objects.states).features).enter()
+        .append("path").attr("d", path)
+        .style("fill", function(d){
+            var thisState = d.properties.name
+          	for (var i = 0; i < dataset.length; i++) {
+          		if (thisState == dataset[i].state) {
+          			d.properties["value"] =  dataset[i].value
+          			d.properties["region"] = dataset[i].region
+          			break
+          		}
+          	}
+          	return color(Math.log(1+d.properties.value))
+          })
+          .on('mouseover', tip.show)
+          .on('mouseout', tip.hide)
+          .call(tip);
+
+    var legendNum = [1,5,10,50,100,500,1000,5000];
+    var legend = svg.selectAll("legend").data(legendNum, function(d) {return color(Math.log(1+d))}).enter().append("g")
+    .attr("transform", function(d,i) {return "translate(" + (180+i*40) + ",500)"});
+
+    legend.append("text").attr("x", 0).attr("y", 30).text(String);
+    legend.append("rect").attr("width",40).attr("height",20).style("fill",color);
+
+    svg.append("text").attr("x", 0).attr("y", 515).text("Earthquake Frequency:")
+})
+
+</script>
+</body>
+</html>
